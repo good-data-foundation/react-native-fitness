@@ -1,7 +1,10 @@
 package com.ovalmoney.fitness;
 
 import android.app.Activity;
+import android.os.Build;
 import android.util.Log;
+
+import androidx.annotation.RequiresApi;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -170,11 +173,22 @@ public class RNFitnessModule extends ReactContextBaseJavaModule{
     }
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.N)
   @ReactMethod
   public void getSleepAnalysis(double startDate, double endDate, Promise promise){
     try {
       manager.getSleepAnalysis(getCurrentActivity(), startDate, endDate, promise);
     }catch(Error e){
+      promise.reject(e);
+    }
+  }
+
+  @RequiresApi(api = Build.VERSION_CODES.N)
+  @ReactMethod
+  public void uploadSleepData(double startDate, double endDate, Promise promise) {
+    try {
+      manager.uploadSleepData(getCurrentActivity(), startDate, endDate, promise);
+    } catch(Error e) {
       promise.reject(e);
     }
   }

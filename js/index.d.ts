@@ -181,3 +181,14 @@ export declare function getSleepAnalysis(request: SleepAnalysisRequest): Promise
  * @return Promise<boolean>
  */
 export declare function subscribeToSteps(): Promise<boolean>
+
+/**
+ * get sleep data on a given period of time. 
+ *
+ * It requires an Object with startDate and endDate attributes as string. 
+ * If startDate is not provided an error will be thrown.
+ * 
+ * @param request SleepAnalysisRequest
+ * @return Promise<SleepAnalysisRecord[]>
+ */
+ export declare function uploadSleepData(request: SleepAnalysisRequest): Promise<String>

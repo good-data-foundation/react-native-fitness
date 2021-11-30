@@ -101,6 +101,19 @@ const parseDate = date => {
 };
 
 
+/**
+ * upload native sleep data
+ * @param startDate
+ * @param endDate
+ * @returns {*}
+ */
+const uploadSleepData = ({ startDate, endDate }) =>
+NativeModules.Fitness.uploadSleepData(
+  parseDate(startDate),
+  parseDate(endDate)
+);
+
+
 export default {
   ...NativeModules.Fitness,
   logout,
@@ -110,4 +123,5 @@ export default {
   getCalories,
   getHeartRate,
   getSleepAnalysis,
+  uploadSleepData
 };
