@@ -92,19 +92,36 @@ public class RNFitnessModule extends ReactContextBaseJavaModule{
     return constants;
   }
 
+//  @ReactMethod
+//  public void updateFitnessOptions(ReadableArray permissions, Promise promise){
+//    try {
+//      manager.updateFitnessOptions(createRequestFromReactArray(permissions));
+//    } catch (Exception e) {
+//      promise.reject(e);
+//    }
+//    promise.resolve(true);
+//  }
+
   @ReactMethod
   public void isAuthorized(ReadableArray permissions, Promise promise){
     promise.resolve(manager.isAuthorized(getCurrentActivity(), createRequestFromReactArray(permissions)));
   }
 
   @ReactMethod
-  public void requestPermissions(ReadableArray permissions, Promise promise){
+  //public void requestPermissions(ReadableArray permissions, Promise promise){
+  public void signInToGoogleFit(ReadableArray permissions, Promise promise) {
     final Activity activity = getCurrentActivity();
-    if(activity != null) {
-      manager.requestPermissions(activity,createRequestFromReactArray(permissions), promise);
-    }else{
+    if(activity != null && permissions.size() > 0) {
+      try {
+        manager.updateFitnessOptions(createRequestFromReactArray(permissions));
+        manager.signInToGoogleFit(activity, promise);
+      } catch (Exception e) {
+        promise.reject(e);
+      }
+    } else {
       promise.reject(new Throwable());
     }
+//    promise.resolve(true);
   }
 
 

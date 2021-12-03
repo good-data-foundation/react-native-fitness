@@ -3,6 +3,7 @@ package com.ovalmoney.fitness.manager;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.nfc.Tag;
 import android.os.Build;
 import android.util.Log;
@@ -67,16 +68,27 @@ import com.google.android.gms.fitness.SessionsClient;
 
 public class Manager implements ActivityEventListener {
 
+    private final static String TAG = "FitnessManager";
+
     private final static int GOOGLE_FIT_PERMISSIONS_REQUEST_CODE = 111;
     private final static int GOOGLE_PLAY_SERVICE_ERROR_DIALOG = 2404;
+
+    private final static int GOOGLE_FIT_LOGIN_PERMISSIONS_REQUEST_CODE = 1001;
+    private final static int GOOGLE_FIT_AUTO_PERMISSIONS_REQUEST_CODE = 1002;
+
     private final static DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.getDefault());
+    private GoogleSignInOptions goolgeSignInOptions;
+    private FitnessOptions fitnessOptions;
 
     private Promise promise;
 
     private static boolean isGooglePlayServicesAvailable(final Activity activity) {
         GoogleApiAvailability googleApiAvailability = GoogleApiAvailability.getInstance();
         int status = googleApiAvailability.isGooglePlayServicesAvailable(activity);
-        if(status != ConnectionResult.SUCCESS) {
+        if (status == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED) {
+            // Alert Dialog and prompt user to update App
+            activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.gms")));
+        } else if(status != ConnectionResult.SUCCESS) {
             if(googleApiAvailability.isUserResolvableError(status)) {
                 googleApiAvailability.getErrorDialog(activity, status, GOOGLE_PLAY_SERVICE_ERROR_DIALOG).show();
             }
@@ -95,7 +107,11 @@ public class Manager implements ActivityEventListener {
         return TimeUnit.DAYS;
     }
 
-    protected FitnessOptions.Builder addPermissionToFitnessOptions(final FitnessOptions.Builder fitnessOptions, final ArrayList<Request> permissions){
+    protected FitnessOptions.Builder addPermissionToFitnessOptions(final FitnessOptions.Builder fitnessOptions,
+                                                                   final ArrayList<Request> permissions){
+        if (permissions == null || permissions.size() == 0) {
+            return fitnessOptions;
+        }
         int length = permissions.size();
         for(int i = 0; i < length; i++){
             Request currentRequest = permissions.get(i);
@@ -118,6 +134,7 @@ public class Manager implements ActivityEventListener {
                     fitnessOptions.addDataType(DataType.TYPE_HEART_RATE_BPM, currentRequest.permissionAccess);
                     break;
                 case SLEEP_ANALYSIS:
+                    fitnessOptions.addDataType(DataType.TYPE_SLEEP_SEGMENT, currentRequest.permissionAccess);
                 default:
                     break;
             }
@@ -125,6 +142,20 @@ public class Manager implements ActivityEventListener {
 
         return fitnessOptions;
     }
+
+    public void updateFitnessOptions(final ArrayList<Request> permissions) {
+        fitnessOptions = addPermissionToFitnessOptions(FitnessOptions.builder(), permissions).build();
+        goolgeSignInOptions = new GoogleSignInOptions.Builder().requestScopes(
+                                                fitnessOptions.getImpliedScopes().get(0),
+                                                fitnessOptions.getImpliedScopes().remove(0)).build();
+    }
+
+    /**
+     * check the authorization of permissions
+     *
+     * @param activity
+     * @return
+     */
 
     public boolean isAuthorized(final Activity activity, final ArrayList<Request> permissions){
         if(isGooglePlayServicesAvailable(activity)) {
@@ -135,29 +166,106 @@ public class Manager implements ActivityEventListener {
         return false;
     }
 
-    public void requestPermissions(@NonNull Activity currentActivity, final ArrayList<Request> permissions, Promise promise) {
+    private boolean isAuthorized(final Activity activity, GoogleSignInAccount account){
+        if(isGooglePlayServicesAvailable(activity)) {
+            boolean authorized = GoogleSignIn.hasPermissions(account, fitnessOptions);
+            return authorized;
+        }
+        return false;
+    }
+
+    public GoogleSignInAccount getGoogleAccount(Activity activity, final GoogleSignInOptionsExtension fitnessOptions) {
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(activity.getApplicationContext());
+        if (account == null || !GoogleSignIn.hasPermissions(account, fitnessOptions)) {
+            account = GoogleSignIn.getAccountForExtension(activity.getApplicationContext(), fitnessOptions);
+        }
+        return account;
+    }
+
+    /**
+     * start the sign in screen
+     *
+     * @param activity
+     */
+    public void signInToGoogleFit(@NonNull Activity activity, Promise promise) {
+        this.promise = promise;
+        activity.startActivityForResult(GoogleSignIn.getClient(activity.getApplicationContext(),
+                goolgeSignInOptions).getSignInIntent(), GOOGLE_FIT_LOGIN_PERMISSIONS_REQUEST_CODE);
+    }
+
+    private void requestGoogleFitPermission(@NonNull Activity currentActivity,
+                                            GoogleSignInAccount account, int requestCode,
+                                            Promise promise) {
         try {
-            this.promise = promise;
-            FitnessOptions fitnessOptions = addPermissionToFitnessOptions(FitnessOptions.builder(), permissions)
-                    .build();
+//            this.promise = promise;
+//            FitnessOptions fitnessOptions = addPermissionToFitnessOptions(FitnessOptions.builder(), permissions)
+//                    .build();
             GoogleSignIn.requestPermissions(
                     currentActivity,
-                    GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
-                    GoogleSignIn.getLastSignedInAccount(currentActivity.getApplicationContext()),
+                    requestCode, // GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
+                    account, // GoogleSignIn.getLastSignedInAccount(currentActivity.getApplicationContext()),
                     fitnessOptions);
         }catch(Exception e){
             Log.e(getClass().getName(), e.getMessage());
+            promise.reject(e);
         }
+    }
+
+    private void checkFitAuthorized(Activity activity, GoogleSignInAccount account, int requestCode, Promise promise) {
+        if (isAuthorized(activity, account)) {
+            // do whatever you need here
+            //accessGoogleFit();
+            promise.resolve(true);
+        } else { //request the permission from google
+            requestGoogleFitPermission(activity, account, requestCode, promise);
+        }
+    }
+
+    public GoogleSignInAccount getSignInAccount(Activity activity, Intent data) {
+        GoogleSignInAccount account = null;
+        Task<GoogleSignInAccount> signinTask = GoogleSignIn.getSignedInAccountFromIntent(data);
+        try {
+            account = signinTask.getResult(Exception.class);
+        } catch (Exception e) {
+            Log.w(TAG, "signInResult:failed code=" + e.getMessage());
+            e.printStackTrace();
+        }
+        return account;
     }
 
     @Override
     public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
-        if (resultCode == Activity.RESULT_OK && requestCode == GOOGLE_FIT_PERMISSIONS_REQUEST_CODE) {
-            promise.resolve(true);
+        if (requestCode == GOOGLE_FIT_LOGIN_PERMISSIONS_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK) {
+                Log.e(TAG, "Permission granted");
+                checkFitAuthorized(activity,
+                        getSignInAccount(activity, data),
+                        GOOGLE_FIT_AUTO_PERMISSIONS_REQUEST_CODE,
+                        this.promise);
+                // do something
+            } else {
+                Log.e(TAG, "Result code: " + resultCode);
+                // do error
+                this.promise.resolve(false);
+            }
+        } else if (resultCode == GOOGLE_FIT_AUTO_PERMISSIONS_REQUEST_CODE) {
+            if (resultCode == Activity.RESULT_OK) {
+                Log.e(TAG, "Permission granted");
+                this.promise.resolve(true);
+            } else {
+                Log.e(TAG, "Result code: " + resultCode);
+                // do error
+                this.promise.resolve(false);
+            }
+        } else {
+            this.promise.resolve(false);
         }
-        if (resultCode == Activity.RESULT_CANCELED && requestCode == GOOGLE_FIT_PERMISSIONS_REQUEST_CODE) {
-            promise.resolve(false);
-        }
+//        if (resultCode == Activity.RESULT_OK && requestCode == GOOGLE_FIT_PERMISSIONS_REQUEST_CODE) {
+//            promise.resolve(true);
+//        }
+//        if (resultCode == Activity.RESULT_CANCELED && requestCode == GOOGLE_FIT_PERMISSIONS_REQUEST_CODE) {
+//            promise.resolve(false);
+//        }
     }
 
 
@@ -189,13 +297,13 @@ public class Manager implements ActivityEventListener {
                 promise.reject(e);
             }
         });
-        }
+    }
 
     public void disconnect(@NonNull Activity currentActivity, final Promise promise) {
         Fitness.getConfigClient(
             currentActivity,
-            GoogleSignIn.getLastSignedInAccount(currentActivity.getApplicationContext()
-            ))
+            GoogleSignIn.getLastSignedInAccount(currentActivity.getApplicationContext())
+            )
           .disableFit()
           .addOnCanceledListener(new OnCanceledListener() {
             @Override
@@ -367,7 +475,7 @@ public class Manager implements ActivityEventListener {
                 });
     }
 
-     public void getHeartRate(Context context, double startDate, double endDate, String customInterval,final Promise promise) {
+    public void getHeartRate(Context context, double startDate, double endDate, String customInterval,final Promise promise) {
         TimeUnit interval = getInterval(customInterval);
 
         DataReadRequest readRequest = new DataReadRequest.Builder()
@@ -418,12 +526,12 @@ public class Manager implements ActivityEventListener {
                 .read(DataType.TYPE_SLEEP_SEGMENT)
                 .setTimeInterval((long) startDate, (long) endDate, TimeUnit.MILLISECONDS)
                 .build();
-
+//        System.out.println("SessionReadRequest");
         GoogleSignInOptionsExtension fitnessOptions = FitnessOptions.builder()
                                                         .addDataType(DataType.TYPE_SLEEP_SEGMENT, FitnessOptions.ACCESS_READ)
                                                         .build();
-        final GoogleSignInAccount gsa = GoogleSignIn.getAccountForExtension(activity.getApplicationContext(), fitnessOptions);
-
+        final GoogleSignInAccount gsa = getGoogleAccount(activity, fitnessOptions); //GoogleSignIn.getAccountForExtension(activity.getApplicationContext(), fitnessOptions);
+//        System.out.println("SessionReadRequest email:" + gsa.getEmail());
         Fitness.getSessionsClient(activity, gsa)
                 .readSession(request)
                 .addOnSuccessListener(new OnSuccessListener<SessionReadResponse>() {
@@ -435,10 +543,11 @@ public class Manager implements ActivityEventListener {
                                 .collect(Collectors.toList());
 
                         WritableArray sleepSample = Arguments.createArray();
-
                         for (Session session : sleepSessions) {
                             WritableMap sleepData = Arguments.createMap();
-
+                            System.out.println("SessionReadRequest onsuccess : " + dateFormat.format(session.getStartTime(TimeUnit.MILLISECONDS)));
+                            sleepData.putString("uid", gsa.getId());
+                            sleepData.putString("email", gsa.getEmail());
                             sleepData.putString("addedBy", session.getAppPackageName());
                             sleepData.putString("startDate", dateFormat.format(session.getStartTime(TimeUnit.MILLISECONDS)));
                             sleepData.putString("endDate", dateFormat.format(session.getEndTime(TimeUnit.MILLISECONDS)));
@@ -526,11 +635,9 @@ public class Manager implements ActivityEventListener {
         dateFormat.setTimeZone(TimeZone.getDefault());
         for (DataPoint dp : dataSet.getDataPoints()) {
             WritableMap sleepStage = Arguments.createMap();
-
             sleepStage.putInt("sleepStage", dp.getValue(Field.FIELD_SLEEP_SEGMENT_TYPE).asInt());
             sleepStage.putString("startDate", dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
             sleepStage.putString("endDate", dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
-
             granularity.pushMap(sleepStage);
         }
     }

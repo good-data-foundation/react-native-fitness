@@ -42,13 +42,15 @@ export declare type Permission = {
 export declare function isAuthorized(permissions: Permission[]): Promise<boolean>
 
 /**
- * Ask permission and return if user granted or not (Android), while, due to 
- * Apple's privacy model, always true is returned in iOS. 
+ * if not permited, sign in with google account
+ * 
+ * xxx Ask permission and return if user granted or not (Android), while, due to 
+ * xxx Apple's privacy model, always true is returned in iOS. 
  * 
  * @param permissions Permission[]
  * @return Promise<boolean>
  */
-export declare function requestPermissions(permissions: Permission[]): Promise<boolean>
+export declare function signInToGoogleFit(permissions: Permission[]): Promise<boolean>
 
 /**
  * Disconnect from Google Fit. 
