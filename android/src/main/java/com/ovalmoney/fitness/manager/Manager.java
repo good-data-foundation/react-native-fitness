@@ -86,11 +86,11 @@ public class Manager implements ActivityEventListener {
     private boolean isGooglePlayServicesAvailable(final Activity activity, DialogInterface.OnCancelListener cancelListener) {
         GoogleApiAvailability googleApiAvailability = GoogleApiAvailability.getInstance();
         int status = googleApiAvailability.isGooglePlayServicesAvailable(activity);
-        Log.i(TAG, "getting status: " + status);
+//        Log.i(TAG, "getting status: " + status);
         if(status != ConnectionResult.SUCCESS) {
-            Log.i(TAG, "getting status not success");
+//            Log.i(TAG, "getting status not success");
             if (googleApiAvailability.isUserResolvableError(status)) {
-                Log.i(TAG, "getting error dialog");
+//                Log.i(TAG, "getting error dialog");
                 googleApiAvailability.getErrorDialog(activity, status, GOOGLE_PLAY_SERVICE_ERROR_DIALOG).show();
             }
 //            if (promise != null) {
@@ -98,7 +98,7 @@ public class Manager implements ActivityEventListener {
 //            }
             return false;
         }
-        Log.i(TAG, "getting status success");
+//        Log.i(TAG, "getting status success");
 //        if (promise != null) {
 //            promise.resolve(true);
 //        }
@@ -170,15 +170,15 @@ public class Manager implements ActivityEventListener {
             isGoogleServiceAvailable = isGooglePlayServicesAvailable(activity, null);
         }
         if (isGoogleServiceAvailable) {
-            Log.i(TAG, "check authorization");
+//            Log.i(TAG, "check authorization");
             final FitnessOptions fitnessOptions = addPermissionToFitnessOptions(FitnessOptions.builder(), permissions)
                     .build();
-            Log.i(TAG, "check authorization 2");
+//            Log.i(TAG, "check authorization 2");
             boolean authorized = GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(activity), fitnessOptions);
-            Log.i(TAG, "check authorization 3:" + authorized);
+//            Log.i(TAG, "check authorization 3:" + authorized);
             return authorized ? 0 : 1;
         }
-        Log.i(TAG, "isAuthorized play service false");
+//        Log.i(TAG, "isAuthorized play service false");
         return 2;
     }
 
@@ -231,7 +231,7 @@ public class Manager implements ActivityEventListener {
     private void checkFitAuthorized(Activity activity, GoogleSignInAccount account, int requestCode, Promise promise) {
         if (isAuthorized(activity, account)) {
             // do whatever you need here
-            Log.i(TAG, "check fit authorized");
+//            Log.i(TAG, "check fit authorized");
             promise.resolve(true);
         } else { //request the permission from google
             requestGoogleFitPermission(activity, account, requestCode, promise);
@@ -261,7 +261,7 @@ public class Manager implements ActivityEventListener {
                         this.promise);
                 // do something
             } else {
-                Log.e(TAG, "Result code 1001 : " + resultCode);
+//                Log.e(TAG, "Result code 1001 : " + resultCode);
                 // do error
                 if (this.promise != null) {
                     this.promise.resolve(false);
@@ -274,7 +274,7 @@ public class Manager implements ActivityEventListener {
                     this.promise.resolve(true);
                 }
             } else {
-                Log.e(TAG, "Result code 1002 : " + resultCode);
+//                Log.e(TAG, "Result code 1002 : " + resultCode);
                 // do error
                 if (this.promise != null) {
                     this.promise.resolve(false);
