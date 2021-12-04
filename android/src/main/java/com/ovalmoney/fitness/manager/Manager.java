@@ -2,6 +2,7 @@ package com.ovalmoney.fitness.manager;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.nfc.Tag;
@@ -82,18 +83,25 @@ public class Manager implements ActivityEventListener {
 
     private Promise promise;
 
-    private static boolean isGooglePlayServicesAvailable(final Activity activity) {
+    private boolean isGooglePlayServicesAvailable(final Activity activity, DialogInterface.OnCancelListener cancelListener) {
         GoogleApiAvailability googleApiAvailability = GoogleApiAvailability.getInstance();
         int status = googleApiAvailability.isGooglePlayServicesAvailable(activity);
-        if (status == ConnectionResult.SERVICE_VERSION_UPDATE_REQUIRED) {
-            // Alert Dialog and prompt user to update App
-            activity.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=com.google.android.gms")));
-        } else if(status != ConnectionResult.SUCCESS) {
-            if(googleApiAvailability.isUserResolvableError(status)) {
+        Log.i(TAG, "getting status: " + status);
+        if(status != ConnectionResult.SUCCESS) {
+            Log.i(TAG, "getting status not success");
+            if (googleApiAvailability.isUserResolvableError(status)) {
+                Log.i(TAG, "getting error dialog");
                 googleApiAvailability.getErrorDialog(activity, status, GOOGLE_PLAY_SERVICE_ERROR_DIALOG).show();
             }
+//            if (promise != null) {
+//                promise.resolve(false);
+//            }
             return false;
         }
+        Log.i(TAG, "getting status success");
+//        if (promise != null) {
+//            promise.resolve(true);
+//        }
         return true;
     }
 
@@ -156,18 +164,27 @@ public class Manager implements ActivityEventListener {
      * @param activity
      * @return
      */
-
-    public boolean isAuthorized(final Activity activity, final ArrayList<Request> permissions){
-        if(isGooglePlayServicesAvailable(activity)) {
+    public int isAuthorized(final Activity activity, final ArrayList<Request> permissions, final boolean checkGoogleService) {
+        boolean isGoogleServiceAvailable = true;
+        if (checkGoogleService) {
+            isGoogleServiceAvailable = isGooglePlayServicesAvailable(activity, null);
+        }
+        if (isGoogleServiceAvailable) {
+            Log.i(TAG, "check authorization");
             final FitnessOptions fitnessOptions = addPermissionToFitnessOptions(FitnessOptions.builder(), permissions)
                     .build();
-            return GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(activity), fitnessOptions);
+            Log.i(TAG, "check authorization 2");
+            boolean authorized = GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(activity), fitnessOptions);
+            Log.i(TAG, "check authorization 3:" + authorized);
+            return authorized ? 0 : 1;
         }
-        return false;
+        Log.i(TAG, "isAuthorized play service false");
+        return 2;
     }
 
+
     private boolean isAuthorized(final Activity activity, GoogleSignInAccount account){
-        if(isGooglePlayServicesAvailable(activity)) {
+        if(isGooglePlayServicesAvailable(activity, null)) {
             boolean authorized = GoogleSignIn.hasPermissions(account, fitnessOptions);
             return authorized;
         }
@@ -214,7 +231,7 @@ public class Manager implements ActivityEventListener {
     private void checkFitAuthorized(Activity activity, GoogleSignInAccount account, int requestCode, Promise promise) {
         if (isAuthorized(activity, account)) {
             // do whatever you need here
-            //accessGoogleFit();
+            Log.i(TAG, "check fit authorized");
             promise.resolve(true);
         } else { //request the permission from google
             requestGoogleFitPermission(activity, account, requestCode, promise);
@@ -244,21 +261,29 @@ public class Manager implements ActivityEventListener {
                         this.promise);
                 // do something
             } else {
-                Log.e(TAG, "Result code: " + resultCode);
+                Log.e(TAG, "Result code 1001 : " + resultCode);
                 // do error
-                this.promise.resolve(false);
+                if (this.promise != null) {
+                    this.promise.resolve(false);
+                }
             }
         } else if (resultCode == GOOGLE_FIT_AUTO_PERMISSIONS_REQUEST_CODE) {
             if (resultCode == Activity.RESULT_OK) {
                 Log.e(TAG, "Permission granted");
-                this.promise.resolve(true);
+                if (this.promise != null) {
+                    this.promise.resolve(true);
+                }
             } else {
-                Log.e(TAG, "Result code: " + resultCode);
+                Log.e(TAG, "Result code 1002 : " + resultCode);
                 // do error
-                this.promise.resolve(false);
+                if (this.promise != null) {
+                    this.promise.resolve(false);
+                }
             }
         } else {
-            this.promise.resolve(false);
+            if (this.promise != null) {
+                this.promise.resolve(false);
+            }
         }
 //        if (resultCode == Activity.RESULT_OK && requestCode == GOOGLE_FIT_PERMISSIONS_REQUEST_CODE) {
 //            promise.resolve(true);

@@ -103,8 +103,10 @@ public class RNFitnessModule extends ReactContextBaseJavaModule{
 //  }
 
   @ReactMethod
-  public void isAuthorized(ReadableArray permissions, Promise promise){
-    promise.resolve(manager.isAuthorized(getCurrentActivity(), createRequestFromReactArray(permissions)));
+  public void isAuthorized(ReadableArray permissions, boolean isCheckGoogleService, Promise promise){
+    promise.resolve(manager.isAuthorized(getCurrentActivity(),
+            createRequestFromReactArray(permissions),
+            isCheckGoogleService));
   }
 
   @ReactMethod

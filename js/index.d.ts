@@ -39,7 +39,7 @@ export declare type Permission = {
  * @param permissions Permission[]
  * @return Promise<boolean>
  */
-export declare function isAuthorized(permissions: Permission[]): Promise<boolean>
+export declare function isAuthorized(permissions: Permission[], isCheckGoogleService: boolean): Promise<number>
 
 /**
  * if not permited, sign in with google account
