@@ -124,8 +124,8 @@ RCT_REMAP_METHOD(signIn,
 }
 
 RCT_REMAP_METHOD(isAuthorized,
-                 withPermissions: (NSArray*) permissions,
-                 checkGoogleService: (BOOL) isCheckGoogleService,
+                 withPermissions: (NSArray*) permissions
+                 checkGoogleService: (BOOL) isCheckGoogleService
                  withAuthorizedResolver:(RCTPromiseResolveBlock)resolve
                  andAuthorizedRejecter:(RCTPromiseRejectBlock)reject){
     if (@available(iOS 12.0, *)) {
