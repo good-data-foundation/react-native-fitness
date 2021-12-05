@@ -133,7 +133,7 @@ RCT_REMAP_METHOD(isAuthorized,
             [self handlePermissions:permissions returnBlock: ^(NSSet *readPerms, NSSet* sharePerms){
                 [self.healthStore getRequestStatusForAuthorizationToShareTypes: sharePerms readTypes: readPerms completion:^(HKAuthorizationRequestStatus status, NSError *error) {
                     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
-                        resolve(status == HKAuthorizationStatusSharingAuthorized ? @YES : @NO);
+                        resolve(status == HKAuthorizationStatusSharingAuthorized ? [NSNumber numberWithInt:0] : [NSNumber numberWithInt:1]);
                     });
                 }];
                 
