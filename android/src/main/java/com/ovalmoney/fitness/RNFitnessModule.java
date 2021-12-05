@@ -111,7 +111,7 @@ public class RNFitnessModule extends ReactContextBaseJavaModule{
 
   @ReactMethod
   //public void requestPermissions(ReadableArray permissions, Promise promise){
-  public void signInToGoogleFit(ReadableArray permissions, Promise promise) {
+  public void signIn(ReadableArray permissions, Promise promise) {
     final Activity activity = getCurrentActivity();
     if(activity != null && permissions.size() > 0) {
       try {

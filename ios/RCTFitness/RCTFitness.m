@@ -101,7 +101,7 @@ RCT_EXPORT_MODULE(Fitness);
     };
 }
 
-RCT_REMAP_METHOD(requestPermissions,
+RCT_REMAP_METHOD(signIn,
                  withPermissions: (NSArray*) permissions
                  withRequestResolver:(RCTPromiseResolveBlock)resolve
                  andRequestRejecter:(RCTPromiseRejectBlock)reject) {
@@ -124,7 +124,8 @@ RCT_REMAP_METHOD(requestPermissions,
 }
 
 RCT_REMAP_METHOD(isAuthorized,
-                 withPermissions: (NSArray*) permissions
+                 withPermissions: (NSArray*) permissions,
+                 checkGoogleService: (BOOL) isCheckGoogleService,
                  withAuthorizedResolver:(RCTPromiseResolveBlock)resolve
                  andAuthorizedRejecter:(RCTPromiseRejectBlock)reject){
     if (@available(iOS 12.0, *)) {
