@@ -123,6 +123,16 @@ RCT_REMAP_METHOD(signIn,
     }
 }
 
+RCT_REMAP_METHOD(getPackageVersion,
+                 withAuthorizedResolver:(RCTPromiseResolveBlock)resolve
+                 andAuthorizedRejecter:(RCTPromiseRejectBlock)reject){
+    NSDictionary *infoDictionary = [[NSBundle mainBundle] infoDictionary];
+    NSString *app_Version = [infoDictionary objectForKey:@"CFBundleShortVersionString"];
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+                        resolve(app_Version);
+                    });  
+}
+
 RCT_REMAP_METHOD(isAuthorized,
                  withPermissions: (NSArray*) permissions
                  checkGoogleService: (BOOL) isCheckGoogleService

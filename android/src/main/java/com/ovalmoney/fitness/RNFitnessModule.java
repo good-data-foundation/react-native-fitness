@@ -1,6 +1,8 @@
 package com.ovalmoney.fitness;
 
 import android.app.Activity;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.util.Log;
 
@@ -101,6 +103,21 @@ public class RNFitnessModule extends ReactContextBaseJavaModule{
 //    }
 //    promise.resolve(true);
 //  }
+
+  @ReactMethod
+  public void getPackageVersion(Promise promise) {
+    PackageManager manager = getReactApplicationContext().getPackageManager();
+    PackageInfo info = null;
+    try{
+      info = manager.getPackageInfo(getReactApplicationContext().getPackageName(),0);
+      promise.resolve(info.versionName);
+    }catch (Exception e){
+      e.printStackTrace();
+      promise.reject(e);
+    }
+
+    promise.resolve("");
+  }
 
   @ReactMethod
   public void isAuthorized(ReadableArray permissions, boolean isCheckGoogleService, Promise promise){

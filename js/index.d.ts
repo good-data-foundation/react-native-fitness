@@ -34,6 +34,14 @@ export declare type Permission = {
 }
 
 /**
+ * Get package version No
+ * 
+ * @return Promise<boolean>
+ */
+export declare function getPackageVersion(): Promise<string>
+
+
+/**
  * Check if given permissions are granted or not. 
  * 
  * @param permissions Permission[]
