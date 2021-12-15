@@ -480,20 +480,23 @@ RCT_REMAP_METHOD(getSleepAnalysis,
 
             switch (sample.value) {
                 case HKCategoryValueSleepAnalysisInBed:
-                  valueString = @"INBED";
-                break;
+                    valueString = @"INBED";
+                    break;
                 case HKCategoryValueSleepAnalysisAsleep:
-                  valueString = @"ASLEEP";
-                break;
+                    valueString = @"ASLEEP";
+                    break;
+                case HKCategoryValueSleepAnalysisAwake:
+                    valueString = @"AWAKE"; // from watch ios 9
+                    break;
                default:
-                  valueString = @"UNKNOWN";
-               break;
+                    valueString = @"UNKNOWN";
+                    break;
             }
             
             NSDictionary *elem = @{
                     @"value" : valueString,
-                    @"sourceName" : [[[sample sourceRevision] source] name],
-                    @"sourceId" : [[[sample sourceRevision] source] bundleIdentifier],
+                    @"addedBy" : [[[sample sourceRevision] source] name],
+                    @"uid" : [[[sample sourceRevision] source] bundleIdentifier],
                     @"startDate" : startDateString,
                     @"endDate" : endDateString,
             };
